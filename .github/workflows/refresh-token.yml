@@ -1,0 +1,23 @@
+name: Renew Instagram token
+
+on:
+  schedule:
+    - cron: "17 9 1,15 * *"   # 09:17 UTC on the 1st and 15th; tokens last 60 days
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Renew the token and store it as a repository secret
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}   # fine-grained token with "Secrets: read and write" on this repo
+        run: |
+          NEW_TOKEN="$(python3 refresh_token.py)"
+          echo "::add-mask::$NEW_TOKEN"
+          gh secret set IG_ACCESS_TOKEN --repo "$GITHUB_REPOSITORY" --body "$NEW_TOKEN"
